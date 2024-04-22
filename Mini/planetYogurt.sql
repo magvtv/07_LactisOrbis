@@ -1,3 +1,5 @@
+-- FLAVORS
+
 CREATE TABLE Flavors (
     id VARCHAR (255) PRIMARY KEY,
     name VARCHAR(255),
@@ -23,6 +25,9 @@ INSERT INTO Flavors (id, name, type) VALUES
 ("PT345", "Banana x Peanut Butter ", "Limited"),
 ("CM3155", "Candy Marshmello", "Limited");
 
+
+
+-- LOCATION
 
 CREATE TABLE Locations (
     id INT PRIMARY KEY,
