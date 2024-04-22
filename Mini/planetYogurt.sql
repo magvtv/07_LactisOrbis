@@ -26,6 +26,51 @@ INSERT INTO Flavors (id, name, type) VALUES
 ("CM3155", "Candy Marshmello", "Limited");
 
 
+-- FLAVOR DETAILS
+CREATE TABLE FlavorDetails (
+    flavor_id VARCHAR(255) PRIMARY KEY,
+    more_info TEXT,
+    allergens VARCHAR(255)
+);
+
+
+INSERT INTO FlavorDetails(flavor_id, more_info, allergens) VALUES
+("AM385", 
+"Delightful blend of nutty almond and rich mocha flavors, offering a creamy and indulgent taste with a hint of coffee",
+"contains dairy and nuts"),
+("BP005", 
+"Tangy and sweet combination featuring the bold flavor of blackberries with a touch of tropical passion fruit, creating a refreshing and vibrant taste experience",
+"none"),
+("CC150", 
+"Classic favorite featuring the irresistible taste of cookie cream, infused with crumbled Oreo cookies for a satisfying crunch and creamy texture",
+"contains dairy, gluten"),
+("CH185", 
+"Timeless and decadent flavor that delivers the smooth and velvety richness of premium chocolate, perfect for chocolate lovers",
+"contains dairy"),
+("CM815", 
+"Playful and whimsical flavor inspired by marshmallows and candy, offering a sweet and fluffy taste reminiscent of childhood treats",
+"none"),
+("GB015", 
+"Unique fusion of sweet grape and creamy banana, creating a harmonious blend of fruity flavors with a creamy finish",
+"none"),
+("MH390", 
+"Comforting and soothing flavor combination that pairs the creamy essence of milk with the delicate sweetness of honey, offering a smooth and mellow taste",
+"contains dairy"),
+("PC025", 
+"Tropical delight featuring the juicy and tangy essence of pineapple combined with the creamy, tropical notes of coconut, evoking a refreshing island getaway",
+"none"),
+("PT105", 
+"Nutty and sophisticated flavor with the distinctive taste of pistachios, delivering a rich and creamy texture with a hint of saltiness",
+"contains nuts"),
+("PB345", 
+"Delightful marriage of creamy banana and rich peanut butter, offering a luscious and nutty flavor profile with a hint of sweetness",
+"contains nuts"),
+("SM010", 
+"Vibrant and fruity combination of ripe strawberries and juicy mangoes, delivering a burst of sweet and tangy flavors with a tropical twist",
+"none"),
+("VL125", 
+"Classic and timeless flavor that embodies the rich and creamy taste of pure vanilla, offering a smooth and comforting indulgence",
+"none");
 
 -- LOCATION
 
