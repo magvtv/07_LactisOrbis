@@ -49,6 +49,29 @@ db.connect((err) => {
 })
 
 
+function wrapText(text, width) {
+    const words = text.split(' ')
+    let lines = []
+    let currentLine = ''
+
+    words.forEach(word => {
+        if(currentLine.length + word.length <= width) {
+            currentLine += word + ' '
+
+        } else {
+            lines.push(currentLine.trim())
+            currentLine = word + ' '
+        }
+    })
+
+    if (currentLine.length > 0) {
+        lines.push(currentLine.trim())
+
+    }
+
+    return lines.join('\n')
+}
+
 
 function flavorFinder() {
     db.query('SELECT f.id, f.name, f.type, d.more_info, d.allergens FROM Flavors f JOIN FlavorDetails d ON f.id = d.flavor_id', (err, results) => {
@@ -65,8 +88,10 @@ function flavorFinder() {
             const selectedFlavor = results[choice - 1]
             if (selectedFlavor) {
                 console.log(`Flavor details for ${selectedFlavor.name}`)
-                console.log(`Description:\n${selectedFlavor.more_info}`)
+                console.log(`Description:\n${wrapText(selectedFlavor.more_info, 150)}`)
                 console.log(`Allergens for ${selectedFlavor.allergens}`)
+                rl.close()
+                db.end()
             }
             else {
                 console.log("Invalid choice, try again!")
