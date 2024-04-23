@@ -1,4 +1,4 @@
-Mini/node_modules
-Mini/package.json
-Mini/package-lock.json
+node_modules/
+package.json
+package-lock.json
 review.txt
