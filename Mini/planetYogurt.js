@@ -51,16 +51,28 @@ db.connect((err) => {
 
 
 function flavorFinder() {
-    db.query('SELECT * FROM Flavors', (err, results) => {
+    db.query('SELECT f.id, f.name, f.type, d.more_info, d.allergens FROM Flavors f JOIN FlavorDetails d ON f.id = d.flavor_id', (err, results) => {
         if (err) {
             console.log(`Error happened: ${err}`)
             return 
         }
-        console.log("Flavor Finder\n")
+        console.log("Flavor Finder")
         results.forEach((flavor, index) => {
             console.log(`${index + 1}. ${flavor.name} [${flavor.type}]`)
         })
-        console.log("Choose your flavor (based on its number): ")
+
+        rl.question("Choose flavor based on its number: ", (choice) => {
+            const selectedFlavor = results[choice - 1]
+            if (selectedFlavor) {
+                console.log(`Flavor details for ${selectedFlavor.name}`)
+                console.log(`Description:\n${selectedFlavor.more_info}`)
+                console.log(`Allergens for ${selectedFlavor.allergens}`)
+            }
+            else {
+                console.log("Invalid choice, try again!")
+            }
+        })
+        
     })
     // mainMenu()
 }
