@@ -1,4 +1,4 @@
-'Database Access'/node_modules
-'Database Access'/package.json
-'Database Access'/package-lock.json
+node_modules/
+package.json
+package-lock.json
 review.txt
