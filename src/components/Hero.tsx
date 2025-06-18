@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, Instagram, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Instagram, ShoppingCart, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Hero = () => {
@@ -143,6 +143,15 @@ const Hero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center animate-fade-in px-4" style={{animationDelay: '0.4s'}}>
+            <Link to="/quiz" className="w-full sm:w-auto">
+              <Button 
+                size="lg"
+                className="bg-gradient-to-r from-py-pink to-py-green text-white border-0 hover:opacity-90 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg font-semibold shadow-py hover-scale w-full sm:w-auto"
+              >
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                Find My Perfect Flavor
+              </Button>
+            </Link>
             <Link to="/stores" className="w-full sm:w-auto">
               <Button 
                 size="lg"

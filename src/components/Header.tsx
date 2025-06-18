@@ -55,6 +55,11 @@ const Header = () => {
             }`}>
               Stores  
             </Link>
+            <Link to="/quiz" className={`transition-colors font-medium text-sm xl:text-base ${
+              isScrolled ? 'text-gray-700 hover:text-py-pink' : 'text-white hover:text-py-pink'
+            }`}>
+              Quiz
+            </Link>
             <a href="#instagram" className={`transition-colors font-medium text-sm xl:text-base ${
               isScrolled ? 'text-gray-700 hover:text-py-pink' : 'text-white hover:text-py-pink'
             }`}>
@@ -114,6 +119,13 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Stores
+              </Link>
+              <Link 
+                to="/quiz" 
+                className="text-gray-700 hover:text-py-pink transition-colors font-medium px-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Quiz
               </Link>
               <a 
                 href="#instagram" 

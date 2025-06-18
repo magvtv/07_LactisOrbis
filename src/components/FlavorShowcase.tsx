@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Flavor {
@@ -131,6 +132,26 @@ const FlavorShowcase = () => {
             <Link to="/flavors">
               <Button className="bg-gradient-primary text-white border-0 hover:opacity-90 px-8 py-3 text-lg font-semibold hover-scale">
                 View All Flavors ({flavors.length} Available)
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Quiz Promotion */}
+        <div className="bg-gradient-to-r from-py-pink/10 to-py-green/10 rounded-2xl p-8 mb-12">
+          <div className="text-center">
+            <div className="text-5xl mb-4">🧠✨</div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">
+              Not Sure Which Flavor Matches Your Personality?
+            </h3>
+            <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
+              Take our scientifically-inspired personality quiz to discover your perfect frozen yogurt match! 
+              Based on 16personalities psychology model with discriminant analysis.
+            </p>
+            <Link to="/quiz">
+              <Button className="bg-gradient-primary text-white border-0 hover:opacity-90 px-8 py-3 text-lg font-semibold hover-scale">
+                <Sparkles className="w-5 h-5 mr-2" />
+                Take the Personality Quiz
               </Button>
             </Link>
           </div>
