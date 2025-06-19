@@ -1,19 +1,16 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, Instagram, ShoppingCart, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { MapPin, Instagram, ShoppingCart, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Hero = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Instagram photos of people enjoying Planet Yogurt
+  // Local photos of Planet Yogurt froyo experiences
   const backgroundImages = [
-    'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=1920&h=1080&fit=crop',
-    'https://images.unsplash.com/photo-1576669801820-0b8817b09f7b?w=1920&h=1080&fit=crop',
-    'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=1920&h=1080&fit=crop',
-    'https://images.unsplash.com/photo-1594736797933-d0401ba2fe65?w=1920&h=1080&fit=crop',
-    'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=1920&h=1080&fit=crop'
+    '/images/froyo-one.jpg',
+    '/images/froyo-two.jpg'
   ];
 
   useEffect(() => {
@@ -26,17 +23,7 @@ const Hero = () => {
     return () => clearInterval(interval);
   }, [backgroundImages.length]);
 
-  const nextImage = () => {
-    setCurrentImageIndex((prevIndex) => 
-      (prevIndex + 1) % backgroundImages.length
-    );
-  };
 
-  const prevImage = () => {
-    setCurrentImageIndex((prevIndex) => 
-      (prevIndex - 1 + backgroundImages.length) % backgroundImages.length
-    );
-  };
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -60,23 +47,7 @@ const Hero = () => {
         <div className="absolute inset-0 bg-black/30"></div>
       </div>
 
-      {/* Carousel Navigation */}
-      <div className="absolute top-1/2 left-2 sm:left-4 transform -translate-y-1/2 z-20">
-        <button
-          onClick={prevImage}
-          className="bg-white/20 backdrop-blur-sm text-white p-1.5 sm:p-2 rounded-full hover:bg-white/30 transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
-        </button>
-      </div>
-      <div className="absolute top-1/2 right-2 sm:right-4 transform -translate-y-1/2 z-20">
-        <button
-          onClick={nextImage}
-          className="bg-white/20 backdrop-blur-sm text-white p-1.5 sm:p-2 rounded-full hover:bg-white/30 transition-colors"
-        >
-          <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
-        </button>
-      </div>
+
 
       {/* Carousel Indicators */}
       <div className="absolute bottom-6 sm:bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
