@@ -5,25 +5,15 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, ArrowRight, Sparkles, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
-// Personality dimensions based on 16personalities model
-interface PersonalityScores {
-  extroversion: number; // E vs I
-  sensing: number; // S vs N (intuition)
-  thinking: number; // T vs F (feeling)
-  judging: number; // J vs P (perceiving)
-  adventurous: number; // Custom dimension for food preferences
-}
-
-interface QuizQuestion {
-  id: number;
-  text: string;
-  options: {
-    text: string;
-    scores: Partial<PersonalityScores>;
-  }[];
-  category: string;
-}
+import { 
+  quizQuestions, 
+  personalityTypes, 
+  flavorMatchingWeights, 
+  flavorCategoryMatrix,
+  type PersonalityScores, 
+  type QuizQuestion, 
+  type PersonalityType 
+} from '@/data/quiz';
 
 interface FlavorMatch {
   id: string;
@@ -36,160 +26,7 @@ interface FlavorMatch {
   reasons: string[];
 }
 
-interface PersonalityType {
-  code: string;
-  name: string;
-  description: string;
-  traits: string[];
-  flavorAffinities: string[];
-}
-
-// Quiz questions covering all personality dimensions
-const quizQuestions: QuizQuestion[] = [
-  {
-    id: 1,
-    text: "At a party, you would rather...",
-    category: "Social Energy",
-    options: [
-      { text: "Mingle with lots of different people", scores: { extroversion: 2 } },
-      { text: "Have deep conversations with a few close friends", scores: { extroversion: -2 } },
-      { text: "Find a quiet corner and observe", scores: { extroversion: -1 } },
-      { text: "Be the center of attention telling stories", scores: { extroversion: 3 } }
-    ]
-  },
-  {
-    id: 2,
-    text: "When trying new foods, you...",
-    category: "Food Adventure",
-    options: [
-      { text: "Always go for the most exotic option", scores: { adventurous: 3, sensing: -1 } },
-      { text: "Stick to familiar flavors you know you'll enjoy", scores: { adventurous: -2, sensing: 2 } },
-      { text: "Ask for recommendations from others", scores: { extroversion: 1, thinking: -1 } },
-      { text: "Research the ingredients and preparation first", scores: { thinking: 2, judging: 1 } }
-    ]
-  },
-  {
-    id: 3,
-    text: "Your ideal frozen yogurt experience would be...",
-    category: "Experience Preference",
-    options: [
-      { text: "A carefully curated combination with perfect balance", scores: { judging: 2, thinking: 1 } },
-      { text: "Spontaneously mixing whatever looks interesting", scores: { judging: -2, adventurous: 2 } },
-      { text: "A classic flavor that never disappoints", scores: { sensing: 2, judging: 1 } },
-      { text: "Something completely unique that no one else would try", scores: { sensing: -2, adventurous: 3 } }
-    ]
-  },
-  {
-    id: 4,
-    text: "When making decisions, you rely more on...",
-    category: "Decision Making",
-    options: [
-      { text: "Logic and objective analysis", scores: { thinking: 3 } },
-      { text: "How it feels and your gut instinct", scores: { thinking: -3 } },
-      { text: "Past experiences and proven methods", scores: { sensing: 2, judging: 1 } },
-      { text: "Future possibilities and potential outcomes", scores: { sensing: -2, judging: -1 } }
-    ]
-  },
-  {
-    id: 5,
-    text: "Your approach to planning a day out is...",
-    category: "Planning Style",
-    options: [
-      { text: "Create a detailed itinerary with backup plans", scores: { judging: 3, thinking: 1 } },
-      { text: "Have a rough idea and see what happens", scores: { judging: -2 } },
-      { text: "Follow someone else's plan", scores: { extroversion: -1, thinking: -1 } },
-      { text: "Be completely spontaneous", scores: { judging: -3, adventurous: 2 } }
-    ]
-  },
-  {
-    id: 6,
-    text: "When you're stressed, you prefer to...",
-    category: "Stress Response",
-    options: [
-      { text: "Talk it out with friends or family", scores: { extroversion: 2, thinking: -1 } },
-      { text: "Spend time alone to process", scores: { extroversion: -2 } },
-      { text: "Find a practical solution immediately", scores: { thinking: 2, judging: 1 } },
-      { text: "Do something creative or spontaneous", scores: { judging: -1, adventurous: 1 } }
-    ]
-  },
-  {
-    id: 7,
-    text: "Your favorite type of flavors tend to be...",
-    category: "Flavor Preference",
-    options: [
-      { text: "Bold and intense", scores: { adventurous: 2, extroversion: 1 } },
-      { text: "Subtle and sophisticated", scores: { thinking: 1, judging: 1 } },
-      { text: "Comforting and familiar", scores: { sensing: 2, thinking: -1 } },
-      { text: "Sweet and indulgent", scores: { thinking: -2, adventurous: 1 } }
-    ]
-  },
-  {
-    id: 8,
-    text: "When sharing food with others, you...",
-    category: "Sharing Style",
-    options: [
-      { text: "Enthusiastically recommend your favorites", scores: { extroversion: 2, thinking: -1 } },
-      { text: "Let others try yours but prefer your own portion", scores: { judging: 1, extroversion: -1 } },
-      { text: "Always order something different to share variety", scores: { adventurous: 2, extroversion: 1 } },
-      { text: "Research and order the 'best' option for the group", scores: { thinking: 2, judging: 2 } }
-    ]
-  },
-  {
-    id: 9,
-    text: "Your ideal frozen yogurt atmosphere would be...",
-    category: "Environment",
-    options: [
-      { text: "Lively and social with friends around", scores: { extroversion: 3 } },
-      { text: "Quiet and peaceful for contemplation", scores: { extroversion: -2, thinking: 1 } },
-      { text: "Trendy and Instagram-worthy", scores: { sensing: -1, extroversion: 1 } },
-      { text: "Cozy and familiar like home", scores: { sensing: 2, thinking: -1 } }
-    ]
-  },
-  {
-    id: 10,
-    text: "When it comes to toppings, you...",
-    category: "Customization",
-    options: [
-      { text: "Go all out with maximum variety", scores: { adventurous: 3, judging: -1 } },
-      { text: "Stick to 2-3 favorites that complement each other", scores: { judging: 2, thinking: 1 } },
-      { text: "Choose based on what looks prettiest", scores: { thinking: -1, sensing: 1 } },
-      { text: "Skip toppings - prefer the pure flavor", scores: { judging: 1, sensing: 1 } }
-    ]
-  }
-];
-
-// Personality type definitions
-const personalityTypes: PersonalityType[] = [
-  {
-    code: "ENFP",
-    name: "The Enthusiastic Explorer",
-    description: "Adventurous, creative, and always ready to try something new",
-    traits: ["Outgoing", "Imaginative", "Spontaneous", "People-focused"],
-    flavorAffinities: ["tropical", "fruity", "unique combinations"]
-  },
-  {
-    code: "INTJ", 
-    name: "The Strategic Perfectionist",
-    description: "Thoughtful, independent, and appreciates carefully crafted flavors",
-    traits: ["Analytical", "Independent", "Strategic", "Quality-focused"],
-    flavorAffinities: ["complex", "sophisticated", "premium"]
-  },
-  {
-    code: "ESFP",
-    name: "The Social Butterfly",
-    description: "Fun-loving, spontaneous, and enjoys sharing experiences",
-    traits: ["Energetic", "Friendly", "Adaptable", "Experience-seeking"],
-    flavorAffinities: ["popular", "sweet", "shareable"]
-  },
-  {
-    code: "ISTJ",
-    name: "The Reliable Classic",
-    description: "Practical, loyal, and appreciates time-tested favorites",
-    traits: ["Reliable", "Practical", "Traditional", "Detail-oriented"],
-    flavorAffinities: ["classic", "consistent", "traditional"]
-  }
-  // Additional types would be defined here...
-];
+// Quiz questions and personality types are now imported from @/data/quiz
 
 const PersonalityQuiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -255,65 +92,258 @@ const PersonalityQuiz = () => {
     const matchedPersonality = personalityTypes.find(p => p.code === personalityCode) || personalityTypes[0];
     setPersonalityType(matchedPersonality);
 
-    // Find best flavor match using discriminant analysis approach
+    // Find best flavor match using enhanced discriminant analysis
     const bestMatch = findBestFlavorMatch(finalScores);
     setFlavorMatch(bestMatch);
     setIsComplete(true);
   };
 
   const findBestFlavorMatch = (userScores: PersonalityScores): FlavorMatch => {
-    // Discriminant analysis for flavor matching
+    // Enhanced discriminant analysis with LLM-powered comprehensive personality-flavor mapping
     const flavorCompatibility = flavors.map(flavor => {
       let compatibilityScore = 0;
       const reasons: string[] = [];
 
-      // Extroversion factor
-      if (userScores.extroversion > 1 && (flavor.category === 'tropical' || flavor.category === 'fruity')) {
-        compatibilityScore += 20;
-        reasons.push("Your outgoing nature pairs well with bold, vibrant flavors");
-      } else if (userScores.extroversion < -1 && (flavor.category === 'creamy' || flavor.category === 'classic')) {
-        compatibilityScore += 20;
-        reasons.push("Your thoughtful nature appreciates refined, subtle flavors");
+      // Use the enhanced flavor category matrix for more precise scoring
+      const categoryMatrix = flavorCategoryMatrix[flavor.category as keyof typeof flavorCategoryMatrix];
+      if (categoryMatrix) {
+        // Apply discriminant analysis weights from the data file
+        Object.entries(userScores).forEach(([trait, score]) => {
+          const categoryWeight = categoryMatrix[trait as keyof PersonalityScores] || 0;
+          const weightedScore = score * categoryWeight;
+          compatibilityScore += weightedScore * 5; // Base multiplier
+        });
       }
 
-      // Adventurous factor
-      if (userScores.adventurous > 1 && flavor.is_signature) {
-        compatibilityScore += 25;
-        reasons.push("Your adventurous spirit craves our unique signature creations");
-      } else if (userScores.adventurous < -1 && flavor.category === 'classic') {
-        compatibilityScore += 25;
-        reasons.push("You appreciate reliable, time-tested favorites");
+      // LLM-Enhanced Personality-Based Flavor Matching
+      
+      // Extroversion Factor (Social Energy) - Enhanced with multiple dimensions
+      if (userScores.extroversion >= 2) {
+        // High extroversion - bold, social flavors
+        if (flavor.category === 'tropical' || flavor.category === 'fruity') {
+          compatibilityScore += 25 * (userScores.extroversion / 3); // Scale by intensity
+          reasons.push("Your outgoing energy matches perfectly with vibrant, bold flavors that make a statement");
+        }
+        if (flavor.is_signature) {
+          compatibilityScore += 20;
+          reasons.push("You love being unique and standing out with signature flavors that spark conversations");
+        }
+        // Additional extroversion considerations
+        if (flavor.name.toLowerCase().includes('tropical') || flavor.name.toLowerCase().includes('passion')) {
+          compatibilityScore += 15;
+          reasons.push("Tropical flavors match your enthusiastic, social personality");
+        }
+      } else if (userScores.extroversion <= -2) {
+        // High introversion - subtle, refined flavors
+        if (flavor.category === 'classic' || flavor.category === 'creamy') {
+          compatibilityScore += 25 * Math.abs(userScores.extroversion / 3);
+          reasons.push("Your thoughtful, introspective nature appreciates refined, subtle flavor profiles");
+        }
+        if (flavor.name.toLowerCase().includes('vanilla') || flavor.name.toLowerCase().includes('mint')) {
+          compatibilityScore += 20;
+          reasons.push("You prefer calming, familiar flavors that don't overwhelm your senses");
+        }
+        // Enhanced introversion matching
+        if (flavor.category === 'creamy' && !flavor.is_signature) {
+          compatibilityScore += 15;
+          reasons.push("Classic, understated flavors align with your preference for quiet sophistication");
+        }
+      } else {
+        // Moderate extroversion - balanced flavors
+        if (flavor.category === 'chocolate' || flavor.category === 'creamy') {
+          compatibilityScore += 15;
+          reasons.push("Your balanced personality enjoys universally appealing, crowd-pleasing flavors");
+        }
       }
 
-      // Thinking vs Feeling
-      if (userScores.thinking > 1 && (flavor.category === 'chocolate' || flavor.category === 'creamy')) {
-        compatibilityScore += 15;
-        reasons.push("Your analytical mind appreciates the complexity of rich flavors");
-      } else if (userScores.thinking < -1 && (flavor.category === 'fruity' || flavor.category === 'tropical')) {
-        compatibilityScore += 15;
-        reasons.push("Your warm heart connects with cheerful, uplifting flavors");
+      // Adventurous Factor (Food Exploration) - Enhanced with risk tolerance assessment
+      if (userScores.adventurous >= 3) {
+        // Highly adventurous - unique, exotic flavors
+        if (flavor.is_signature) {
+          compatibilityScore += 35;
+          reasons.push("Your bold, adventurous spirit craves our most innovative signature creations");
+        }
+        if (flavor.category === 'tropical') {
+          compatibilityScore += 25;
+          reasons.push("You thrive on exploring exotic, tropical flavor adventures that transport you");
+        }
+        // Enhanced adventurous matching
+        if (flavor.name.toLowerCase().includes('passion') || flavor.name.toLowerCase().includes('exotic')) {
+          compatibilityScore += 20;
+          reasons.push("Unique, experimental flavors feed your desire for culinary exploration");
+        }
+      } else if (userScores.adventurous >= 1) {
+        // Moderately adventurous - interesting but approachable
+        if (flavor.category === 'fruity' || flavor.category === 'chocolate') {
+          compatibilityScore += 20;
+          reasons.push("You enjoy flavors that are interesting and distinctive without being overwhelming");
+        }
+        if (flavor.is_signature && flavor.category !== 'tropical') {
+          compatibilityScore += 15;
+          reasons.push("Signature flavors that aren't too exotic match your moderate sense of adventure");
+        }
+      } else if (userScores.adventurous <= -2) {
+        // Conservative - classic, familiar flavors
+        if (flavor.category === 'classic') {
+          compatibilityScore += 35;
+          reasons.push("You appreciate reliable, time-tested flavor classics that never disappoint");
+        }
+        if (flavor.name.toLowerCase().includes('vanilla') || flavor.name.toLowerCase().includes('caramel')) {
+          compatibilityScore += 25;
+          reasons.push("Familiar, comforting flavors align with your preference for proven favorites");
+        }
+        // Enhanced conservative matching
+        if (!flavor.is_signature && (flavor.category === 'classic' || flavor.category === 'creamy')) {
+          compatibilityScore += 20;
+          reasons.push("Traditional flavors provide the reliability and consistency you value");
+        }
       }
 
-      // Judging vs Perceiving
-      if (userScores.judging > 1 && flavor.category === 'classic') {
-        compatibilityScore += 10;
-        reasons.push("Your organized nature values consistent, dependable choices");
-      } else if (userScores.judging < -1 && flavor.is_signature) {
-        compatibilityScore += 10;
-        reasons.push("Your spontaneous side loves trying something unexpected");
+      // Thinking vs Feeling Factor - Enhanced with cognitive style analysis
+      if (userScores.thinking >= 2) {
+        // High thinking - complex, sophisticated flavors
+        if (flavor.category === 'chocolate') {
+          compatibilityScore += 25;
+          reasons.push("Your analytical mind appreciates the complexity and depth of rich chocolate flavors");
+        }
+        if (flavor.name.toLowerCase().includes('mint') || flavor.category === 'creamy') {
+          compatibilityScore += 20;
+          reasons.push("You value carefully crafted, sophisticated flavor combinations with perfect balance");
+        }
+        // Enhanced thinking preference
+        if (flavor.ingredients && flavor.ingredients.length >= 4) {
+          compatibilityScore += 15;
+          reasons.push("Complex flavor profiles with multiple ingredients appeal to your analytical nature");
+        }
+      } else if (userScores.thinking <= -2) {
+        // High feeling - warm, emotionally satisfying flavors
+        if (flavor.category === 'fruity' || flavor.category === 'tropical') {
+          compatibilityScore += 25;
+          reasons.push("Your warm, empathetic heart connects with cheerful, uplifting fruit flavors");
+        }
+        if (flavor.name.toLowerCase().includes('berry') || flavor.name.toLowerCase().includes('caramel')) {
+          compatibilityScore += 20;
+          reasons.push("You're drawn to comforting, emotionally satisfying flavors that feel like a warm hug");
+        }
+        // Enhanced feeling preference
+        if (flavor.name.toLowerCase().includes('bliss') || flavor.name.toLowerCase().includes('dream')) {
+          compatibilityScore += 15;
+          reasons.push("Flavors with emotional, evocative names resonate with your feeling-oriented nature");
+        }
       }
 
+      // Sensing vs Intuition Factor - Enhanced with information processing style
+      if (userScores.sensing >= 2) {
+        // High sensing - familiar, traditional flavors
+        if (flavor.category === 'classic' || flavor.category === 'chocolate') {
+          compatibilityScore += 22;
+          reasons.push("Your practical, detail-oriented nature values tried-and-true flavor favorites");
+        }
+        if (!flavor.is_signature) {
+          compatibilityScore += 15;
+          reasons.push("Traditional flavors that have proven their worth appeal to your sensing preference");
+        }
+        // Enhanced sensing matching
+        if (flavor.name.length <= 15) { // Simple, straightforward names
+          compatibilityScore += 10;
+          reasons.push("Clear, straightforward flavors match your preference for concrete experiences");
+        }
+      } else if (userScores.sensing <= -2) {
+        // High intuition - innovative, creative combinations
+        if (flavor.is_signature || flavor.category === 'tropical') {
+          compatibilityScore += 22;
+          reasons.push("Your imaginative, future-focused spirit loves innovative flavor possibilities");
+        }
+        if (flavor.name.toLowerCase().includes('paradise') || flavor.name.toLowerCase().includes('magic')) {
+          compatibilityScore += 15;
+          reasons.push("Creative, evocative flavor names appeal to your intuitive imagination");
+        }
+      }
+
+      // Judging vs Perceiving Factor - Enhanced with structure preference analysis
+      if (userScores.judging >= 2) {
+        // High judging - consistent, refined flavors
+        if (flavor.category === 'classic' || flavor.category === 'creamy') {
+          compatibilityScore += 20;
+          reasons.push("Your organized, structured approach values consistent, dependable flavor choices");
+        }
+        if (!flavor.is_signature && flavor.category !== 'tropical') {
+          compatibilityScore += 15;
+          reasons.push("Reliable, well-established flavors align with your preference for planned choices");
+        }
+      } else if (userScores.judging <= -2) {
+        // High perceiving - spontaneous, varied flavors
+        if (flavor.is_signature || flavor.category === 'tropical') {
+          compatibilityScore += 20;
+          reasons.push("Your spontaneous, flexible nature loves trying something unexpected and unique");
+        }
+        if (flavor.category === 'fruity' && flavor.is_signature) {
+          compatibilityScore += 15;
+          reasons.push("Unique fruit combinations match your adaptable, variety-seeking personality");
+        }
+      }
+
+      // Special LLM-Enhanced Flavor-Specific Bonuses with deeper psychological insights
+      if (flavor.name.toLowerCase().includes('berry') && userScores.thinking <= 0 && userScores.extroversion >= 0) {
+        compatibilityScore += 12;
+        reasons.push("Berry flavors perfectly complement your social, emotionally-driven personality");
+      }
+
+      if (flavor.name.toLowerCase().includes('chocolate') && userScores.thinking >= 1) {
+        compatibilityScore += 12;
+        reasons.push("The sophisticated complexity of chocolate appeals to your analytical, thoughtful nature");
+      }
+
+      if (flavor.name.toLowerCase().includes('vanilla') && userScores.adventurous <= 0 && userScores.sensing >= 0) {
+        compatibilityScore += 12;
+        reasons.push("Vanilla's timeless elegance matches your appreciation for refined classics");
+      }
+
+      if (flavor.name.toLowerCase().includes('tropical') && userScores.adventurous >= 2 && userScores.extroversion >= 1) {
+        compatibilityScore += 12;
+        reasons.push("Tropical flavors match your outgoing, adventure-seeking personality perfectly");
+      }
+
+      // Mood and context bonuses based on personality combinations
+      if (userScores.extroversion >= 2 && userScores.adventurous >= 2) {
+        if (flavor.is_signature && flavor.category === 'tropical') {
+          compatibilityScore += 15;
+          reasons.push("As a social adventurer, you're the perfect ambassador for our boldest signature tropical creations");
+        }
+      }
+
+      if (userScores.thinking >= 2 && userScores.judging >= 2) {
+        if (flavor.category === 'chocolate' && !flavor.is_signature) {
+          compatibilityScore += 15;
+          reasons.push("Classic chocolate flavors appeal to your analytical, structured approach to flavor selection");
+        }
+      }
+
+      // Ensure reasonable score range with enhanced scaling
+      const baselineScore = 60; // Higher baseline for better user experience
+      const finalScore = Math.min(100, Math.max(baselineScore, baselineScore + (compatibilityScore * 0.8)));
+      
       return {
         ...flavor,
-        matchPercentage: Math.min(100, Math.max(60, compatibilityScore)),
-        reasons: reasons.slice(0, 3) // Top 3 reasons
+        matchPercentage: Math.round(finalScore),
+        reasons: reasons.slice(0, 3) // Top 3 most relevant reasons
       };
     });
 
-    // Return the highest scoring flavor
-    return flavorCompatibility.reduce((best, current) => 
-      current.matchPercentage > best.matchPercentage ? current : best
-    );
+    // Sort by compatibility score and return the best match
+    const sortedMatches = flavorCompatibility.sort((a, b) => b.matchPercentage - a.matchPercentage);
+    
+    // Enhanced logging for analysis
+    console.log('User Personality Scores:', userScores);
+    console.log('Top 5 Flavor Matches:', sortedMatches.slice(0, 5).map(f => ({
+      name: f.name,
+      score: f.matchPercentage,
+      category: f.category,
+      isSignature: f.is_signature,
+      reasons: f.reasons
+    })));
+    
+    return sortedMatches[0];
   };
 
   const resetQuiz = () => {
@@ -340,81 +370,102 @@ const PersonalityQuiz = () => {
 
   if (isComplete && flavorMatch && personalityType) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="w-full max-w-6xl mx-auto p-3 sm:p-6">
         <Card className="border-0 shadow-2xl bg-gradient-to-br from-white to-gray-50">
-          <CardHeader className="text-center pb-6">
-            <div className="flex items-center justify-center mb-4">
-              <Sparkles className="w-8 h-8 text-py-pink mr-2" />
-              <CardTitle className="text-3xl font-bold text-gradient">
+          <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
+            <div className="flex items-center justify-center mb-3 sm:mb-4">
+              <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-py-pink mr-2" />
+              <CardTitle className="text-2xl sm:text-3xl font-bold text-gradient">
                 Your Perfect Match!
               </CardTitle>
             </div>
           </CardHeader>
           
-          <CardContent className="space-y-8">
-            {/* Personality Type */}
+          <CardContent className="space-y-6 sm:space-y-8 px-4 sm:px-6">
+            {/* Enhanced Personality Type Display */}
             <div className="text-center">
-              <Badge className="text-lg px-4 py-2 mb-4 bg-gradient-primary text-white">
+              <Badge className="text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2 mb-3 sm:mb-4 bg-gradient-primary text-white">
                 {personalityType.code} - {personalityType.name}
               </Badge>
-              <p className="text-gray-700 text-lg leading-relaxed">
+              <p className="text-base sm:text-lg text-gray-700 leading-relaxed mb-3 sm:mb-4">
                 {personalityType.description}
               </p>
-              <div className="flex flex-wrap justify-center gap-2 mt-4">
+              
+              {/* LLM Enhancement: Show detailed analysis if available */}
+              {personalityType.detailedAnalysis && (
+                <div className="bg-blue-50 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                  <h4 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">Your Personality Insights:</h4>
+                  <p className="text-blue-700 text-xs sm:text-sm leading-relaxed">
+                    {personalityType.detailedAnalysis}
+                  </p>
+                </div>
+              )}
+              
+              <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mt-3 sm:mt-4">
                 {personalityType.traits.map((trait, index) => (
-                  <Badge key={index} variant="outline" className="text-sm">
+                  <Badge key={index} variant="outline" className="text-xs sm:text-sm">
                     {trait}
                   </Badge>
                 ))}
               </div>
             </div>
 
-            {/* Flavor Match */}
-            <div className="bg-gradient-to-r from-py-pink/10 to-py-green/10 rounded-2xl p-6">
-              <div className="text-center mb-6">
-                <div className="text-6xl mb-4">🍨</div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+            {/* Enhanced Flavor Match Display */}
+            <div className="bg-gradient-to-r from-py-pink/10 to-py-green/10 rounded-2xl p-4 sm:p-6">
+              <div className="text-center mb-4 sm:mb-6">
+                <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🍨</div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
                   {flavorMatch.name}
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
                   {flavorMatch.description}
                 </p>
-                <div className="flex items-center justify-center mb-4">
-                  <div className="text-3xl font-bold text-py-pink">
+                <div className="flex items-center justify-center mb-3 sm:mb-4">
+                  <div className="text-2xl sm:text-3xl font-bold text-py-pink">
                     {flavorMatch.matchPercentage}%
                   </div>
-                  <span className="text-gray-600 ml-2">Match</span>
+                  <span className="text-gray-600 ml-2 text-sm sm:text-base">Match</span>
                 </div>
               </div>
 
-              {/* Match Reasons */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-800 text-center">
+              {/* Enhanced Match Reasons with LLM insights */}
+              <div className="space-y-2 sm:space-y-3">
+                <h4 className="font-semibold text-gray-800 text-center text-sm sm:text-base">
                   Why this flavor is perfect for you:
                 </h4>
                 {flavorMatch.reasons.map((reason, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-py-pink rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div key={index} className="flex items-start space-x-2 sm:space-x-3">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 bg-py-pink rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <span className="text-white text-xs font-bold">{index + 1}</span>
                     </div>
-                    <p className="text-gray-700 text-sm leading-relaxed">{reason}</p>
+                    <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">{reason}</p>
                   </div>
                 ))}
               </div>
+
+              {/* LLM Enhancement: Show flavor reasoning if available */}
+              {personalityType.flavorReasoning && (
+                <div className="mt-4 sm:mt-6 bg-green-50 rounded-lg p-3 sm:p-4">
+                  <h4 className="font-semibold text-green-800 mb-2 text-sm sm:text-base">The Science Behind Your Match:</h4>
+                  <p className="text-green-700 text-xs sm:text-sm leading-relaxed">
+                    {personalityType.flavorReasoning}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <Button 
                 onClick={resetQuiz}
                 variant="outline"
-                className="border-py-pink text-py-pink hover:bg-py-pink hover:text-white"
+                className="border-py-pink text-py-pink hover:bg-py-pink hover:text-white text-sm sm:text-base py-2 sm:py-3"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Take Quiz Again
               </Button>
               <Button 
-                className="bg-gradient-primary text-white hover:opacity-90"
+                className="bg-gradient-primary text-white hover:opacity-90 text-sm sm:text-base py-2 sm:py-3"
                 onClick={() => window.location.href = '/stores'}
               >
                 Find This Flavor at Our Stores
@@ -429,48 +480,61 @@ const PersonalityQuiz = () => {
   const currentQ = quizQuestions[currentQuestion];
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="w-full max-w-5xl mx-auto p-3 sm:p-6">
       <Card className="border-0 shadow-xl">
-        <CardHeader>
-          <div className="flex items-center justify-between mb-4">
-            <Badge variant="outline" className="text-sm">
+        <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <Badge variant="outline" className="text-xs sm:text-sm">
               Question {currentQuestion + 1} of {quizQuestions.length}
             </Badge>
-            <Badge className="bg-py-green text-white">
+            <Badge className="bg-py-green text-white text-xs sm:text-sm">
               {currentQ.category}
             </Badge>
           </div>
-          <Progress value={progress} className="mb-4" />
-          <CardTitle className="text-xl md:text-2xl text-center leading-relaxed">
+          <Progress 
+            value={progress} 
+            variant="gradient"
+            className="mb-3 sm:mb-4"
+          />
+          <CardTitle className="text-lg sm:text-xl md:text-2xl text-center leading-relaxed px-2">
             {currentQ.text}
           </CardTitle>
+          
+          {/* LLM Enhancement: Show question insights if available */}
+          {currentQ.reasoning && (
+            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-600 text-center leading-relaxed">
+                💡 This question: {currentQ.reasoning}
+              </p>
+            </div>
+          )}
         </CardHeader>
         
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6 pb-4 sm:pb-6">
           {currentQ.options.map((option, index) => (
             <Button
               key={index}
               variant="outline"
-              className="w-full text-left justify-start p-4 h-auto border-2 border-gray-200 hover:border-py-pink hover:bg-py-pink/10 hover:text-py-green transition-all duration-200 focus:border-py-pink focus:bg-py-pink/10 focus:text-py-green"
+              className="w-full text-left justify-start p-3 sm:p-4 h-auto border-2 border-gray-200 hover:border-py-pink hover:bg-green-100 hover:text-green-800 transition-all duration-200 focus:border-py-pink focus:bg-green-100 focus:text-green-800"
               onClick={() => handleAnswer(option)}
             >
-              <div className="text-sm md:text-base leading-relaxed">
+              <div className="text-sm sm:text-base leading-relaxed text-left">
                 {option.text}
               </div>
             </Button>
           ))}
           
-          <div className="flex justify-between mt-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 gap-3 sm:gap-0">
             <Button
               variant="ghost"
               onClick={goToPreviousQuestion}
               disabled={currentQuestion === 0}
-              className="text-gray-500"
+              className="text-gray-500 text-sm sm:text-base order-2 sm:order-1"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Previous
             </Button>
-            <div className="text-sm text-gray-500 self-center">
+            <div className="text-xs sm:text-sm text-gray-500 text-center order-1 sm:order-2">
               ~{(quizQuestions.length - currentQuestion) * 30} seconds remaining
             </div>
           </div>

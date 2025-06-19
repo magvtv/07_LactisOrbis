@@ -32,9 +32,9 @@ const Header = () => {
           <Link to="/" className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14">
               <img 
-                src="https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=100&h=100&fit=crop&crop=center" 
+                src="/pylogo.png" 
                 alt="Planet Yogurt Africa Logo" 
-                className="w-full h-full object-contain rounded-full"
+                className="w-full h-full object-contain"
               />
             </div>
             <div className="min-w-0">
