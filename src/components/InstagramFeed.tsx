@@ -1,82 +1,28 @@
-
+'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Instagram, Heart, MessageCircle, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useRef } from 'react';
+import { Instagram, Heart, MessageCircle, ExternalLink, ChevronLeft, ChevronRight, RefreshCw, AlertCircle } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { instagramApi, mockInstagramPosts, InstagramPost, InstagramApiService } from '@/services/instagramApi';
 
-// Mock Instagram posts data - in real implementation this would come from Instagram API
-const mockPosts = [
-  {
-    id: '1',
-    image: '/api/placeholder/300/300',
-    caption: 'Berry Bliss is hitting different today! 🍓✨ Who else is feeling the pink vibes? #PYVibes #BerryBliss',
-    likes: 245,
-    comments: 18,
-    timestamp: '2 hours ago',
-    isPopular: true
-  },
-  {
-    id: '2', 
-    image: '/api/placeholder/300/300',
-    caption: 'Tropical Paradise meets Monday mood 🥭🍍 Starting the week right at Garden City! #TropicalVibes',
-    likes: 189,
-    comments: 12,
-    timestamp: '5 hours ago',
-    isPopular: false
-  },
-  {
-    id: '3',
-    image: '/api/placeholder/300/300', 
-    caption: 'Custom creation alert! 🎨 When you can\'t choose just one flavor... why not three? #MixAndMatch',
-    likes: 312,
-    comments: 24,
-    timestamp: '1 day ago',
-    isPopular: true
-  },
-  {
-    id: '4',
-    image: '/api/placeholder/300/300',
-    caption: 'Family fun day at Sarit Centre! Nothing beats sharing smiles and swirls 👨‍👩‍👧‍👦 #FamilyTime',
-    likes: 156,
-    comments: 8,
-    timestamp: '2 days ago',
-    isPopular: false
-  },
-  {
-    id: '5',
-    image: '/api/placeholder/300/300',
-    caption: 'Choco Dream with extra chocolate chips because... why not? 🍫😍 #ChocoDream #ChocolateLovers',
-    likes: 278,
-    comments: 15,
-    timestamp: '3 days ago',
-    isPopular: true
-  },
-  {
-    id: '6',
-    image: '/api/placeholder/300/300',
-    caption: 'New flavor alert! 🚨 Mint Magic is here and it\'s absolutely refreshing! #MintMagic #NewFlavor',
-    likes: 423,
-    comments: 31,
-    timestamp: '4 days ago',
-    isPopular: true
-  }
-];
-
-const InstagramCarousel = ({ posts, title, badgeText, badgeColor }: {
-  posts: typeof mockPosts;
+const InstagramCarousel = ({ posts, title, badgeText, badgeColor, onRefresh, isLoading }: {
+  posts: InstagramPost[];
   title: string;
   badgeText: string;
   badgeColor: string;
+  onRefresh?: () => void;
+  isLoading?: boolean;
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const openInstagram = (postId?: string) => {
-    const url = postId 
-      ? `https://instagram.com/p/${postId}` 
-      : 'https://instagram.com/planetyogurtafrica';
-    window.open(url, '_blank');
+  const openInstagram = (post: InstagramPost) => {
+    if (post.permalink && post.permalink !== '#') {
+      window.open(post.permalink, '_blank');
+    } else {
+      window.open('https://instagram.com/planetyogurtafrica', '_blank');
+    }
   };
 
   const scrollLeft = () => {
@@ -99,6 +45,18 @@ const InstagramCarousel = ({ posts, title, badgeText, badgeColor }: {
           <Badge className={`${badgeColor} text-white`}>
             {badgeText}
           </Badge>
+          {onRefresh && (
+            <Button
+              onClick={onRefresh}
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+              className="hidden md:flex"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          )}
           <div className="hidden md:flex space-x-2">
             <button
               onClick={scrollLeft}
@@ -129,13 +87,46 @@ const InstagramCarousel = ({ posts, title, badgeText, badgeColor }: {
             key={post.id}
             className="group flex-shrink-0 w-72 overflow-hidden border-0 shadow-lg hover:shadow-py hover-scale transition-all duration-300 cursor-pointer animate-fade-in"
             style={{animationDelay: `${index * 0.1}s`}}
-            onClick={() => openInstagram(post.id)}
+            onClick={() => openInstagram(post)}
           >
             <div className="relative">
-              <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                <div className="text-4xl">📸</div>
-              </div>
-              {post.isPopular && (
+              {post.media_type === 'REELS' ? (
+                <div className="h-48 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center relative">
+                  {post.thumbnail_url || post.media_url ? (
+                    <img 
+                      src={post.thumbnail_url || post.media_url} 
+                      alt="Instagram Reel"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling!.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className="hidden text-4xl">🎬</div>
+                  <Badge className="absolute top-2 left-2 bg-purple-500 text-white text-xs">
+                    REEL
+                  </Badge>
+                </div>
+              ) : (
+                <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                  {post.media_url ? (
+                    <img 
+                      src={post.media_url} 
+                      alt="Instagram post"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling!.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className="hidden text-4xl">📸</div>
+                </div>
+              )}
+              {post.is_popular && (
                 <Badge className="absolute top-2 right-2 bg-py-pink text-white text-xs">
                   Popular
                 </Badge>
@@ -152,16 +143,16 @@ const InstagramCarousel = ({ posts, title, badgeText, badgeColor }: {
               
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <div className="flex items-center space-x-3">
-                  <span className={`flex items-center ${post.isPopular ? 'text-py-pink font-medium' : ''}`}>
-                    <Heart className={`w-3 h-3 mr-1 ${post.isPopular ? 'fill-current' : ''}`} />
-                    {post.likes}
+                  <span className={`flex items-center ${post.is_popular ? 'text-py-pink font-medium' : ''}`}>
+                    <Heart className={`w-3 h-3 mr-1 ${post.is_popular ? 'fill-current' : ''}`} />
+                    {post.like_count || 0}
                   </span>
                   <span className="flex items-center">
                     <MessageCircle className="w-3 h-3 mr-1" />
-                    {post.comments}
+                    {post.comments_count || 0}
                   </span>
                 </div>
-                <span>{post.timestamp}</span>
+                <span>{InstagramApiService.formatTimestamp(post.timestamp)}</span>
               </div>
             </CardContent>
           </Card>
@@ -178,8 +169,81 @@ const InstagramCarousel = ({ posts, title, badgeText, badgeColor }: {
 };
 
 const InstagramFeed = () => {
-  const recentPosts = mockPosts.slice(0, 4);
-  const popularPosts = mockPosts.filter(post => post.isPopular);
+  const [recentPosts, setRecentPosts] = useState<InstagramPost[]>([]);
+  const [popularPosts, setPopularPosts] = useState<InstagramPost[]>([]);
+  const [reelsOnly, setReelsOnly] = useState<InstagramPost[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [useRealAPI, setUseRealAPI] = useState(false);
+
+  // Initialize Instagram API if credentials are available
+  useEffect(() => {
+    const initializeAPI = () => {
+      const accessToken = import.meta.env.VITE_INSTAGRAM_ACCESS_TOKEN;
+      const userId = import.meta.env.VITE_INSTAGRAM_USER_ID;
+      const useReal = import.meta.env.VITE_USE_REAL_INSTAGRAM_API === 'true';
+
+      if (useReal && accessToken && userId && accessToken !== 'your_long_lived_access_token_here') {
+        instagramApi.initialize({ accessToken, userId });
+        setUseRealAPI(true);
+        console.log('Instagram API initialized for real data fetching');
+      } else {
+        console.log('Using mock Instagram data - configure API credentials to use real data');
+        setUseRealAPI(false);
+      }
+    };
+
+    initializeAPI();
+    fetchInstagramData();
+  }, []);
+
+  const fetchInstagramData = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (useRealAPI && instagramApi.isConfigured()) {
+        console.log('Fetching real Instagram data...');
+        
+        // Fetch real data from Instagram API
+        const [recent, popular, reels] = await Promise.all([
+          instagramApi.fetchRecentPosts(8),
+          instagramApi.fetchPopularPosts(8),
+          instagramApi.fetchReels(12)
+        ]);
+
+        setRecentPosts(recent);
+        setPopularPosts(popular);
+        setReelsOnly(reels);
+        
+        console.log('Successfully fetched Instagram data:', { recent: recent.length, popular: popular.length, reels: reels.length });
+      } else {
+        // Use mock data
+        console.log('Using mock Instagram data');
+        const mockRecentPosts = mockInstagramPosts.slice(0, 4);
+        const mockPopularPosts = mockInstagramPosts.filter(post => post.is_popular);
+        const mockReels = mockInstagramPosts.filter(post => post.media_type === 'REELS');
+
+        setRecentPosts(mockRecentPosts);
+        setPopularPosts(mockPopularPosts);
+        setReelsOnly(mockReels);
+      }
+    } catch (err) {
+      console.error('Error fetching Instagram data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch Instagram data');
+      
+      // Fallback to mock data on error
+      const mockRecentPosts = mockInstagramPosts.slice(0, 4);
+      const mockPopularPosts = mockInstagramPosts.filter(post => post.is_popular);
+      const mockReels = mockInstagramPosts.filter(post => post.media_type === 'REELS');
+
+      setRecentPosts(mockRecentPosts);
+      setPopularPosts(mockPopularPosts);
+      setReelsOnly(mockReels);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const openInstagram = () => {
     window.open('https://instagram.com/planetyogurtafrica', '_blank');
@@ -197,6 +261,21 @@ const InstagramFeed = () => {
             Follow our daily adventures! From flavor reveals to customer smiles, 
             catch all the <span className="text-py-pink font-semibold">#PYVibes</span> on our Instagram.
           </p>
+
+          {/* API Status Indicator */}
+          {error && (
+            <div className="max-w-md mx-auto mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center">
+              <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
+              <span className="text-sm text-yellow-800">Using demo data - {error}</span>
+            </div>
+          )}
+
+          {!useRealAPI && !error && (
+            <div className="max-w-md mx-auto mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <span className="text-sm text-blue-800">Demo mode - Configure API credentials for live data</span>
+            </div>
+          )}
+
           <Button 
             onClick={openInstagram}
             className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:opacity-90 hover-scale"
@@ -207,12 +286,26 @@ const InstagramFeed = () => {
           </Button>
         </div>
 
+        {/* Latest Reels Carousel */}
+        {reelsOnly.length > 0 && (
+          <InstagramCarousel 
+            posts={reelsOnly}
+            title="🎬 Latest Reels"
+            badgeText="Fresh Content"
+            badgeColor="bg-purple-500"
+            onRefresh={fetchInstagramData}
+            isLoading={isLoading}
+          />
+        )}
+
         {/* Most Recent Posts Carousel */}
         <InstagramCarousel 
           posts={recentPosts}
           title="🕒 Most Recent"
           badgeText="Live Updates"
           badgeColor="bg-py-pink"
+          onRefresh={fetchInstagramData}
+          isLoading={isLoading}
         />
 
         {/* Most Popular Posts Carousel */}

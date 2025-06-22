@@ -39,7 +39,7 @@ const Header = () => {
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gradient truncate">Planet Yogurt</h1>
-              <p className="text-xs md:text-sm text-gray-600 -mt-1 hidden sm:block">Africa</p>
+              <p className="text-xs md:text-sm text-gray-600 -mt-1 hidden sm:block">Kenya</p>
             </div>
           </Link>
 
